@@ -2,6 +2,10 @@
 #include <iostream>
 #include <algorithm>
 
+//
+//
+//
+
 const int genomeSize = 16;
 const int populationSize = 4;
 const int selectedPopulationSize = 2;
