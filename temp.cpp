@@ -15,8 +15,9 @@ class Individual {
 public:
 	GENOME_t genome;
 	FITNESS_t fitness;
-	Individual() {
-		for (unsigned int i = 0; i < GENOME_SIZE; i++) {
+	Individual() {}
+	Individual(unsigned int genomeSize) {
+		for (unsigned int i = 0; i < genomeSize; i++) {
 			genome.insert(genome.begin(), rand() % 2);
 		}
 	}
@@ -27,14 +28,15 @@ typedef std::vector<Individual> POPULATION_t;
 class Population : public POPULATION_t {
 public:
 	//POPULATION_t population;
-	Population() {
-		for (unsigned int i = 0; i < POPULATION_SIZE; i++) {
-			this->push_back(Individual());
+	Population() {}
+	Population(unsigned int populationSize, unsigned int genomeSize) {
+		for (unsigned int i = 0; i < populationSize; i++) {
+			this->push_back(Individual(genomeSize));
 		}
 	}
 	void show() {
 		for (POPULATION_t::iterator it = POPULATION_t::begin(); it != POPULATION_t::end(); it++) {
-			for (unsigned int j = 0; j < GENOME_SIZE; j++) {
+			for (unsigned int j = 0; j < it->genome.size(); j++) {
 				std::cout << it->genome[j];
 			}
 			std::cout << " " << it->fitness << std::endl;
@@ -46,7 +48,7 @@ Population evaluation(Population arg) {
 	FITNESS_t count;
 	for (unsigned int i = 0; i < arg.size(); i++) {
 		count = 0;
-		for (unsigned int j = 0; j < GENOME_SIZE; j++) {
+		for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
 			if (arg[i].genome[j] == true) count++;
 		}
 		//std::cout << count << std::endl;
@@ -92,7 +94,7 @@ Population crossover(Population arg) {
 	//ans.resize(0);
 	//std::cout << ans.population.size() << std::endl;
 	//while (ans.size() < POPULATION_SIZE) {
-	for (unsigned int i = 0; i < GENOME_SIZE; i++) {
+	for (unsigned int i = 0; i < arg[i].genome.size(); i++) {
 		if (rand() % 2 == 1) {
 			//std::cout << "1" << std::endl;
 			//a.genome[i] = arg[0].genome[i];
@@ -115,7 +117,7 @@ Population mutation(Population arg) {
 	for (unsigned int i = 0; i < arg.size(); i++) {
 		if (rand() % 10000 < MUTATION_RATE * 10000) {
 			std::cout << "mutation!!" << std::endl;
-			for (unsigned int j = 0; j < GENOME_SIZE; j++) {
+			for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
 				if (rand() % 2 == 1) {
 					arg[i].genome[j] = !arg[i].genome[j];
 				}
@@ -152,7 +154,7 @@ Population loop(Population arg) {
 	f.resize(0);
 	std::cout << std::endl;
 	std::cout << "populationSize = " << f.size() << std::endl;
-	while (f.size() < POPULATION_SIZE) {
+	while (f.size() < b.size()) {
 		c = selection(b);
 		std::cout << std::endl;
 		std::cout << "selecetd:" << std::endl;
@@ -190,7 +192,7 @@ Population loop(Population arg) {
 }
 
 int main() {
-	Population a;
+	Population a(POPULATION_SIZE, GENOME_SIZE);
 
 	for (unsigned int k = 0; k < GENERATION_NUM; k++) {
 		std::cout << std::endl;
