@@ -3,9 +3,9 @@
 #include <algorithm>
 
 const int GENOME_SIZE = 32;
-const int POPULATION_SIZE = 4;
-const int SELECTED_POPULATION = 2;
-const int GENERATION_NUM = 20;
+const int POPULATION_SIZE = 20;
+const int SELECTED_POPULATION_SIZE = 2;
+const int GENERATION_NUM = 5;
 const double MUTATION_RATE = 0.05;
 
 typedef std::vector<bool> GENOME_t;
@@ -81,7 +81,7 @@ Population selection(Population arg) {
 		return lhs.fitness > rhs.fitness;
 	});
 	ans = arg;
-	ans.resize(SELECTED_POPULATION);
+	ans.resize(SELECTED_POPULATION_SIZE);
 	return ans;
 }
 
