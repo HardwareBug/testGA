@@ -151,7 +151,7 @@ Population loop(Population arg) {
 	std::cout << " " << b.population[i].fitness << std::endl;
 	}
 	*/
-	f.resize(0);
+	//f.resize(0);
 	std::cout << std::endl;
 	std::cout << "populationSize = " << f.size() << std::endl;
 	while (f.size() < b.size()) {
