@@ -2,7 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
-const int GENOME_SIZE = 16;
+const int GENOME_SIZE = 32;
 const int POPULATION_SIZE = 4;
 const int SELECTED_POPULATION = 2;
 const int GENERATION_NUM = 20;
@@ -56,7 +56,7 @@ Population evaluation(Population arg) {
 }
 
 Population selection(Population arg) {
-	//Population ans;
+	Population ans;
 	/*
 	FITNESS_t fitnessSum;
 	std::vector<double> probabilityAccumulation(POPULATION_SIZE)
@@ -80,33 +80,35 @@ Population selection(Population arg) {
 	std::sort(arg.begin(), arg.end(), [](const Individual &lhs, const Individual &rhs) {
 		return lhs.fitness > rhs.fitness;
 	});
-	arg.resize(SELECTED_POPULATION);
-	return arg;
+	ans = arg;
+	ans.resize(SELECTED_POPULATION);
+	return ans;
 }
 
 Population crossover(Population arg) {
-	Population ans;
-	Individual a, b;
+	//Population ans;
+	//Individual a, b;
 
-	ans.resize(0);
+	//ans.resize(0);
 	//std::cout << ans.population.size() << std::endl;
-	while (ans.size() < POPULATION_SIZE) {
-		for (int i = 0; i < GENOME_SIZE; i++) {
-			if (rand() % 2 == 1) {
-				//std::cout << "1" << std::endl;
-				a.genome[i] = arg[0].genome[i];
-				b.genome[i] = arg[1].genome[i];
-			}
-			else {
-				//std::cout << "0" << std::endl;
-				a.genome[i] = arg[1].genome[i];
-				b.genome[i] = arg[0].genome[i];
-			}
+	//while (ans.size() < POPULATION_SIZE) {
+	for (int i = 0; i < GENOME_SIZE; i++) {
+		if (rand() % 2 == 1) {
+			//std::cout << "1" << std::endl;
+			//a.genome[i] = arg[0].genome[i];
+			//b.genome[i] = arg[1].genome[i];
 		}
-		ans.push_back(a);
-		ans.push_back(b);
+		else {
+			//std::cout << "0" << std::endl;
+			//a.genome[i] = arg[1].genome[i];
+			//b.genome[i] = arg[0].genome[i];
+			std::swap(arg[0].genome[i], arg[1].genome[i]);
+		}
 	}
-	return ans;
+	//ans.push_back(a);
+	//ans.push_back(b);
+	//}
+	return arg;
 }
 
 Population mutation(Population arg) {
@@ -124,7 +126,7 @@ Population mutation(Population arg) {
 }
 
 Population loop(Population arg) {
-	Population b, c, d, e;
+	Population b, c, d, e, f;
 	/*
 	std::cout << std::endl;
 	std::cout << "initialized:" << std::endl;
@@ -147,36 +149,44 @@ Population loop(Population arg) {
 	std::cout << " " << b.population[i].fitness << std::endl;
 	}
 	*/
-	c = selection(b);
+	f.resize(0);
 	std::cout << std::endl;
-	std::cout << "selecetd:" << std::endl;
+	std::cout << "populationSize = " << f.size() << std::endl;
+	while (f.size() < POPULATION_SIZE) {
+		c = selection(b);
+		std::cout << std::endl;
+		std::cout << "selecetd:" << std::endl;
+		c.show();
+		/*
+		for(int i = 0; i < (int)c.population.size(); i++){
+		for(int j = 0; j < GENOME_SIZE; j++){
+		std::cout << c.population[i].genome[j];
+		}
+		std::cout << " " << c.population[i].fitness << std::endl;
+		}
+		*/
+		d = crossover(c);
+		std::cout << std::endl;
+		std::cout << "crossovered:" << std::endl;
+		d.show();
+		/*
+		for(int i = 0; i < (int)d.population.size(); i++){
+		for(int j = 0; j < GENOME_SIZE; j++){
+		std::cout << d.population[i].genome[j];
+		}
+		std::cout << " " << d.population[i].fitness << std::endl;
+		}
+		*/
+		e = mutation(d);
+		std::cout << std::endl;
+		std::cout << "mutated:" << std::endl;
+		e.show();
 
-	c.show();
-	/*
-	for(int i = 0; i < (int)c.population.size(); i++){
-	for(int j = 0; j < GENOME_SIZE; j++){
-	std::cout << c.population[i].genome[j];
+		copy(e.begin(), e.end(), back_inserter(f));
+		std::cout << std::endl;
+		std::cout << "populationSize = " << f.size() << std::endl;
 	}
-	std::cout << " " << c.population[i].fitness << std::endl;
-	}
-	*/
-	d = crossover(c);
-	std::cout << std::endl;
-	std::cout << "crossovered:" << std::endl;
-	d.show();
-	/*
-	for(int i = 0; i < (int)d.population.size(); i++){
-	for(int j = 0; j < GENOME_SIZE; j++){
-	std::cout << d.population[i].genome[j];
-	}
-	std::cout << " " << d.population[i].fitness << std::endl;
-	}
-	*/
-	e = mutation(d);
-	std::cout << std::endl;
-	std::cout << "mutated:" << std::endl;
-	e.show();
-	return e;
+	return f;
 }
 
 int main() {
