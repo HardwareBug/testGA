@@ -24,33 +24,33 @@ public:
 
 typedef std::vector<Individual> POPULATION_t;
 
-class Population {
+class Population : public POPULATION_t {
 public:
-	POPULATION_t population;
+	//POPULATION_t population;
 	Population() {
 		for (int i = 0; i < POPULATION_SIZE; i++) {
-			population.push_back(Individual());
+			this->push_back(Individual());
 		}
 	}
 	void show() {
-		for (long unsigned int i = 0; i < population.size(); i++) {
+		for (POPULATION_t::iterator it = POPULATION_t::begin(); it != POPULATION_t::end(); it++) {
 			for (int j = 0; j < GENOME_SIZE; j++) {
-				std::cout << population[i].genome[j];
+				std::cout << it->genome[j];
 			}
-			std::cout << " " << population[i].fitness << std::endl;
+			std::cout << " " << it->fitness << std::endl;
 		}
 	}
 };
 
 Population evaluation(Population arg) {
 	FITNESS_t count;
-	for (long unsigned int i = 0; i < arg.population.size(); i++) {
+	for (long unsigned int i = 0; i < arg.size(); i++) {
 		count = 0;
 		for (int j = 0; j < GENOME_SIZE; j++) {
-			if (arg.population[i].genome[j] == true) count++;
+			if (arg[i].genome[j] == true) count++;
 		}
 		//std::cout << count << std::endl;
-		arg.population[i].fitness = count;
+		arg[i].fitness = count;
 	}
 	return arg;
 }
@@ -77,10 +77,10 @@ Population selection(Population arg) {
 	}
 	}
 	*/
-	std::sort(arg.population.begin(), arg.population.end(), [](const Individual &lhs, const Individual &rhs) {
+	std::sort(arg.begin(), arg.end(), [](const Individual &lhs, const Individual &rhs) {
 		return lhs.fitness > rhs.fitness;
 	});
-	arg.population.resize(SELECTED_POPULATION);
+	arg.resize(SELECTED_POPULATION);
 	return arg;
 }
 
@@ -88,34 +88,34 @@ Population crossover(Population arg) {
 	Population ans;
 	Individual a, b;
 
-	ans.population.resize(0);
+	ans.resize(0);
 	//std::cout << ans.population.size() << std::endl;
-	while (ans.population.size() < POPULATION_SIZE) {
+	while (ans.size() < POPULATION_SIZE) {
 		for (int i = 0; i < GENOME_SIZE; i++) {
 			if (rand() % 2 == 1) {
 				//std::cout << "1" << std::endl;
-				a.genome[i] = arg.population[0].genome[i];
-				b.genome[i] = arg.population[1].genome[i];
+				a.genome[i] = arg[0].genome[i];
+				b.genome[i] = arg[1].genome[i];
 			}
 			else {
 				//std::cout << "0" << std::endl;
-				a.genome[i] = arg.population[1].genome[i];
-				b.genome[i] = arg.population[0].genome[i];
+				a.genome[i] = arg[1].genome[i];
+				b.genome[i] = arg[0].genome[i];
 			}
 		}
-		ans.population.push_back(a);
-		ans.population.push_back(b);
+		ans.push_back(a);
+		ans.push_back(b);
 	}
 	return ans;
 }
 
 Population mutation(Population arg) {
-	for (long unsigned int i = 0; i < arg.population.size(); i++) {
+	for (long unsigned int i = 0; i < arg.size(); i++) {
 		if (rand() % 10000 < MUTATION_RATE * 10000) {
 			std::cout << "mutation!!" << std::endl;
 			for (int j = 0; j < GENOME_SIZE; j++) {
 				if (rand() % 2 == 1) {
-					arg.population[i].genome[j] = !arg.population[i].genome[j];
+					arg[i].genome[j] = !arg[i].genome[j];
 				}
 			}
 		}
