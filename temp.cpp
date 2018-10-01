@@ -2,10 +2,6 @@
 #include <iostream>
 #include <algorithm>
 
-//
-//
-//
-
 const int genomeSize = 16;
 const int populationSize = 4;
 const int selectedPopulationSize = 2;
@@ -37,7 +33,7 @@ public:
 		}
 	}
 	void show() {
-		for (int i = 0; i < (int)population.size(); i++) {
+		for (long unsigned int i = 0; i < population.size(); i++) {
 			for (int j = 0; j < genomeSize; j++) {
 				std::cout << population[i].genome[j];
 			}
@@ -48,7 +44,7 @@ public:
 
 Population evaluation(Population arg) {
 	FITNESS_t count;
-	for (int i = 0; i < populationSize; i++) {
+	for (long unsigned int i = 0; i < arg.population.size(); i++) {
 		count = 0;
 		for (int j = 0; j < genomeSize; j++) {
 			if (arg.population[i].genome[j] == true) count++;
@@ -114,7 +110,7 @@ Population crossover(Population arg) {
 }
 
 Population mutation(Population arg) {
-	for (int i = 0; i < populationSize; i++) {
+	for (long unsigned int i = 0; i < arg.population.size(); i++) {
 		if (rand() % 10000 < mutationRate * 10000) {
 			std::cout << "mutation!!" << std::endl;
 			for (int j = 0; j < genomeSize; j++) {
