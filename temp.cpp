@@ -50,6 +50,25 @@ public:
 	}
 };
 
+class CrossoverTable {
+private:
+	int tableSize;
+	std::vector<fitness_t*> fitnessPtr;
+	std::vector<std::vector<double>> table;
+
+	// todo
+public:
+	genome_t getCrossoverMask() {
+		// todo
+		genome_t temp;
+		return temp;
+	}
+
+	void update() {
+		// todo
+	}
+};
+
 class Evaluation {
 private:
 	Population temp(Population arg) {
@@ -157,6 +176,7 @@ class Crossover {
 
 	int funcID = 0;
 	double crossoverRate = CROSSOVER_RATE;
+	CrossoverTable *crossoverTablePtr;
 	Population(Crossover::*func[1])(Population) = { &Crossover::temp };
 public:
 	Population done(Population arg) {
@@ -169,6 +189,10 @@ public:
 
 	void setCrossoverRate(double rate) {
 		crossoverRate = rate;
+	}
+
+	void setCrossoverTablePtr(CrossoverTable *table) {
+		crossoverTablePtr = table;
 	}
 };
 
@@ -265,6 +289,7 @@ return f;
 int main() {
 	//Population a(POPULATION_SIZE, GENOME_SIZE);
 	Population population, nextPopulation, temp;
+	CrossoverTable crosoverTable;
 	Evaluation evaluation;
 	Selection selection;
 	Crossover crossover;
@@ -275,6 +300,7 @@ int main() {
 	selection.setSelectionFuncID(0);
 	crossover.setCrossoverFuncID(0);
 	crossover.setCrossoverRate(CROSSOVER_RATE);
+	crossover.setCrossoverTablePtr(&crosoverTable);
 	mutation.setMutationFuncID(0);
 	mutation.setMutationRate(MUTATION_RATE);
 
@@ -289,6 +315,7 @@ int main() {
 			copy(temp.begin(), temp.end(), back_inserter(nextPopulation));
 		}
 		population = evaluation.done(nextPopulation);
+		crosoverTable.update();
 		std::cout << std::endl;
 		std::cout << "generation " << k + 1 << " :" << std::endl;
 		population.show();
