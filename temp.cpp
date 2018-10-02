@@ -34,6 +34,11 @@ public:
 			this->push_back(Individual(genomeSize));
 		}
 	}
+	void init(unsigned int populationSize, unsigned int genomeSize) {
+		for (unsigned int i = 0; i < populationSize; i++) {
+			this->push_back(Individual(genomeSize));
+		}
+	}
 	void show() {
 		for (population_t::iterator it = population_t::begin(); it != population_t::end(); it++) {
 			for (unsigned int j = 0; j < it->genome.size(); j++) {
@@ -243,12 +248,13 @@ return f;
 
 int main() {
 	//Population a(POPULATION_SIZE, GENOME_SIZE);
-	Population population(POPULATION_SIZE, GENOME_SIZE), nextPopulation, temp;
+	Population population, nextPopulation, temp;
 	Evaluation evaluation;
 	Selection selection;
 	Crossover crossover;
 	Mutation mutation;
 
+	population.init(POPULATION_SIZE, GENOME_SIZE);
 	evaluation.setEvaluationFuncID(0);
 	selection.setSelectionFuncID(0);
 	crossover.setCrossoverFuncID(0);
