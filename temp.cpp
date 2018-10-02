@@ -8,13 +8,13 @@ const unsigned int SELECTED_POPULATION_SIZE = 2;
 const unsigned int GENERATION_NUM = 5;
 const double MUTATION_RATE = 0.05;
 
-typedef std::vector<bool> GENOME_t;
-typedef int FITNESS_t;
+typedef std::vector<bool> genome_t;
+typedef int fitness_t;
 
 class Individual {
 public:
-	GENOME_t genome;
-	FITNESS_t fitness;
+	genome_t genome;
+	fitness_t fitness;
 	Individual() {}
 	Individual(unsigned int genomeSize) {
 		for (unsigned int i = 0; i < genomeSize; i++) {
@@ -23,11 +23,11 @@ public:
 	}
 };
 
-typedef std::vector<Individual> POPULATION_t;
+typedef std::vector<Individual> population_t;
 
-class Population : public POPULATION_t {
+class Population : public population_t {
 public:
-	//POPULATION_t population;
+	//population_t population;
 	Population() {}
 	Population(unsigned int populationSize, unsigned int genomeSize) {
 		for (unsigned int i = 0; i < populationSize; i++) {
@@ -35,7 +35,7 @@ public:
 		}
 	}
 	void show() {
-		for (POPULATION_t::iterator it = POPULATION_t::begin(); it != POPULATION_t::end(); it++) {
+		for (population_t::iterator it = population_t::begin(); it != population_t::end(); it++) {
 			for (unsigned int j = 0; j < it->genome.size(); j++) {
 				std::cout << it->genome[j];
 			}
@@ -45,7 +45,7 @@ public:
 };
 
 Population evaluation(Population arg) {
-	FITNESS_t count;
+	fitness_t count;
 	for (unsigned int i = 0; i < arg.size(); i++) {
 		count = 0;
 		for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
@@ -60,7 +60,7 @@ Population evaluation(Population arg) {
 Population selection(Population arg) {
 	Population ans;
 	/*
-	FITNESS_t fitnessSum;
+	fitness_t fitnessSum;
 	std::vector<double> probabilityAccumulation(POPULATION_SIZE)
 	double randNum;
 	for(int i = 0; i < POPULATION_SIZE; i++){
