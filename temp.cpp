@@ -164,7 +164,7 @@ public:
 class Mutation {
 	Population temp(Population arg) {
 		for (unsigned int i = 0; i < arg.size(); i++) {
-			if (rand() % 10000 < MUTATION_RATE * 10000) {
+			if (rand() % 10000 < mutationRate * 10000) {
 				std::cout << "mutation!!" << std::endl;
 				for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
 					if (rand() % 2 == 1) {
@@ -177,6 +177,7 @@ class Mutation {
 	}
 
 	int funcID = 0;
+	double mutationRate = MUTATION_RATE;
 	Population(Mutation::*func[1])(Population) = { &Mutation::temp };
 public:
 	Population done(Population arg) {
@@ -185,6 +186,10 @@ public:
 
 	void setMutationFuncID(int ID) {
 		funcID = ID;
+	}
+
+	void setMutationRate(double rate) {
+		mutationRate = rate;
 	}
 };
 
@@ -259,6 +264,7 @@ int main() {
 	selection.setSelectionFuncID(0);
 	crossover.setCrossoverFuncID(0);
 	mutation.setMutationFuncID(0);
+	mutation.setMutationRate(MUTATION_RATE);
 
 	population = evaluation.done(population);
 	std::cout << std::endl;
