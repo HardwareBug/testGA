@@ -6,7 +6,6 @@ const unsigned int GENOME_SIZE = 32;
 const unsigned int POPULATION_SIZE = 20;
 const unsigned int SELECTED_POPULATION_SIZE = 2;
 const unsigned int GENERATION_NUM = 5;
-const double CROSSOVER_RATE = 0.95;
 const double MUTATION_RATE = 0.05;
 
 typedef std::vector<bool> genome_t;
@@ -131,23 +130,18 @@ class Crossover {
 		//ans.resize(0);
 		//std::cout << ans.population.size() << std::endl;
 		//while (ans.size() < POPULATION_SIZE) {
-		if (rand() % 10000 < crossoverRate * 10000) {
-			for (unsigned int i = 0; i < arg[i].genome.size(); i++) {
-				if (rand() % 2 == 1) {
-					//std::cout << "1" << std::endl;
-					//a.genome[i] = arg[0].genome[i];
-					//b.genome[i] = arg[1].genome[i];
-				}
-				else {
-					//std::cout << "0" << std::endl;
-					//a.genome[i] = arg[1].genome[i];
-					//b.genome[i] = arg[0].genome[i];
-					std::swap(arg[0].genome[i], arg[1].genome[i]);
-				}
+		for (unsigned int i = 0; i < arg[i].genome.size(); i++) {
+			if (rand() % 2 == 1) {
+				//std::cout << "1" << std::endl;
+				//a.genome[i] = arg[0].genome[i];
+				//b.genome[i] = arg[1].genome[i];
 			}
-		}
-		else {
-			std::cout << "not crossoverd" << std::endl;
+			else {
+				//std::cout << "0" << std::endl;
+				//a.genome[i] = arg[1].genome[i];
+				//b.genome[i] = arg[0].genome[i];
+				std::swap(arg[0].genome[i], arg[1].genome[i]);
+			}
 		}
 		//ans.push_back(a);
 		//ans.push_back(b);
@@ -156,7 +150,6 @@ class Crossover {
 	}
 
 	int funcID = 0;
-	double crossoverRate = CROSSOVER_RATE;
 	Population(Crossover::*func[1])(Population) = { &Crossover::temp };
 public:
 	Population done(Population arg) {
@@ -165,10 +158,6 @@ public:
 
 	void setCrossoverFuncID(int ID) {
 		funcID = ID;
-	}
-
-	void setCrossoverRate(double rate) {
-		crossoverRate = rate;
 	}
 };
 
@@ -274,7 +263,6 @@ int main() {
 	evaluation.setEvaluationFuncID(0);
 	selection.setSelectionFuncID(0);
 	crossover.setCrossoverFuncID(0);
-	crossover.setCrossoverRate(CROSSOVER_RATE);
 	mutation.setMutationFuncID(0);
 	mutation.setMutationRate(MUTATION_RATE);
 
