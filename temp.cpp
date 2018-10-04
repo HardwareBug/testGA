@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <math.h>
+#include <time.h>
 
 const unsigned int GENOME_SIZE = 100;
 const unsigned int POPULATION_SIZE = 20;
@@ -338,6 +339,7 @@ mutationRate = rate;
 */
 
 int main() {
+	srand((unsigned)time(NULL));
 	Population population(POPULATION_SIZE, GENOME_SIZE);
 
 	population = evaluation(population);
@@ -359,7 +361,7 @@ int main() {
 			temp = selection(population);
 			temp.resize(2);
 			temp = crossover(temp);
-			temp = mutation(temp);
+			//temp = mutation(temp);
 
 			copy(temp.begin(), temp.end(), back_inserter(nextPopulation));
 		}
