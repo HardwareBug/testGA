@@ -45,30 +45,7 @@ public:
 		}
 	}
 };
-/*
-typedef std::vector<std::vector<double> > matrix_t;
 
-class CrossoutData{
-public:
-matrix_t connect, cut;
-fitness_t fitness;
-}
-
-class CrossoverTable {
-public:
-std::vector<CrossoutData>b data;
-matrix_t table;
-
-CrossoverTable(unsigned int size){
-table.resize(size-1);
-for (unsigned int i = 0; i < table.size(); i++) {
-for (unsigned int j = size; j > 0; j--) {
-table[i].push_back(1);
-}
-}
-}
-}
-*/
 namespace Evaluation {
 	enum FuncID_e { TEMP, LIFE_GAME };
 
@@ -89,19 +66,19 @@ namespace Evaluation {
 		unsigned int size = ceil(sqrt(arg[0].genome.size()));
 		unsigned int count;
 
-		for (int i = 0; i < (int)arg.size(); i++) {
+		for (unsigned int i = 0; i < arg.size(); i++) {
 			arg[i].fitness = 0;
-			for (int j = 0; j < (int)arg[i].genome.size(); j++) {
+			for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
 				count = 0;
 				for (int k = -1; k <= 1; k++) {
 					for (int l = -1; l <= 1; l++) {
-						if (0 <= j + k + l*size && j + k + l*size < arg[i].genome.size()) {
+						if (0 <= (int)j + k + l*size && (int)j + k + l*size < arg[i].genome.size()) {
 							if (arg[i].genome[j] == true) count++;
 						}
 					}
 				}
 				if (arg[i].genome[j] == true) {
-					if (2 < count && count < 5) {
+					if (2 < conut && count < 5) {
 						arg[i].fitness += 1;
 					}
 					else {
