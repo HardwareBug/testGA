@@ -292,14 +292,14 @@ private:
 	}
 public:
 	void done() {
-		Population population(POPULATION_SIZE, GENOME_SIZE), populationNext, temp;
+		Population population(populationSize, genomeSize), populationNext, temp;
 
 		population = this->evaluation(population);
 		std::cout << std::endl;
 		std::cout << "generation " << 0 << " :" << std::endl;
 		population.show();
 
-		for (unsigned int k = 0; k < GENERATION_NUM; k++) {
+		for (unsigned int k = 0; k < generationNum; k++) {
 			populationNext.resize(0);
 			while (populationNext.size() < populationSize) {
 				temp = this->selection(population);
