@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <math.h>
 
 const unsigned int GENOME_SIZE = 32;
 const unsigned int POPULATION_SIZE = 20;
@@ -46,6 +47,8 @@ public:
 };
 
 namespace Evaluation {
+	enum FuncID_e { TEMP, LIFE_GAME };
+
 	Population temp(Population arg) {
 		fitness_t count;
 		for (unsigned int i = 0; i < arg.size(); i++) {
@@ -58,9 +61,40 @@ namespace Evaluation {
 		}
 		return arg;
 	}
+
+	Population lifeGame(Population arg) {
+		unsigned int size = ceil(sqrt(arg[0].genome.size()));
+		unsigned int count;
+
+		for (unsigned int i = 0; i < arg.size(); i++) {
+			arg[i].fitness = 0;
+			for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
+				count = 0;
+				for (int k = -1; k <= 1; k++) {
+					for (int l = -1; l <= 1; l++) {
+						if (0 <= (int)j + k + l*size && (int)j + k + l*size < arg[i].genome.size()) {
+							if (arg[i].genome[j] == true) count++;
+						}
+					}
+				}
+				if (arg[i].genome[j] == true) {
+					if (2 < conut && count < 5) {
+						arg[i].fitness += 1;
+					}
+					else {
+						arg[i].fitness -= 1;
+					}
+				}
+			}
+		}
+
+		return arg;
+	}
 }
 
 namespace Selection {
+	enum FuncID_e { TEMP };
+
 	Population temp(Population arg) {
 		Population ans;
 		/*
@@ -93,6 +127,8 @@ namespace Selection {
 }
 
 namespace Crossover {
+	enum FuncID_e { TEMP };
+
 	Population temp(Population arg) {
 		//Population ans;
 		//Individual a, b;
@@ -121,6 +157,8 @@ namespace Crossover {
 }
 
 namespace Mutation {
+	enum FuncID_e { TEMP };
+
 	Population temp(Population arg) {
 		for (unsigned int i = 0; i < arg.size(); i++) {
 			if (rand() % 10000 < MUTATION_RATE * 10000) {
@@ -204,12 +242,12 @@ private:
 	unsigned int generationNum = GENERATION_NUM;
 	double mutationRate = MUTATION_RATE;
 
-	int evalutaionFuncID = 0;
-	int selectionFuncID = 0;
-	int crossoverFuncID = 0;
-	int mutationFuncID = 0;
+	int evalutaionFuncID = Evaluation::LIFE_GAME;
+	int selectionFuncID = Selection::TEMP;
+	int crossoverFuncID = Crossover::TEMP;
+	int mutationFuncID = Mutation::TEMP;
 
-	gaFuncPtrVec_t evaluationFuncPtrVec = { Evaluation::temp };
+	gaFuncPtrVec_t evaluationFuncPtrVec = { Evaluation::temp, Evaluation::lifeGame };
 	gaFuncPtrVec_t selectionFuncPtrVec = { Selection::temp };
 	gaFuncPtrVec_t crossoverFuncPtrVec = { Crossover::temp };
 	gaFuncPtrVec_t mutationFuncPtrVec = { Mutation::temp };
