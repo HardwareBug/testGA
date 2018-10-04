@@ -3,20 +3,33 @@
 #include <algorithm>
 #include <math.h>
 
-const unsigned int GENOME_SIZE = 32;
+const unsigned int GENOME_SIZE = 100;
 const unsigned int POPULATION_SIZE = 20;
 const unsigned int GENERATION_NUM = 5;
-const double MUTATION_RATE = 0.05;
+const unsigned int ELITE_POPULATION_SIZE = 4;
+const double MUTATION_RATE = 0.01;
 
-const unsigned int SELECTED_POPULATION_SIZE = 2;
+// 0 : Uniform Crossover, 1 : Two-point Crossover 
+const unsigned int TABLE = 0;
+
+// 0 : Temporary, 1 : LifeGame (my function)
+const unsigned int EVALUATION = 1;
+// 0 : Temporary
+const unsigned int SELECTION = 0;
+// 0 : Temporary, 1 : Use crossout table
+const unsigned int CROSSOVER = 0;
+// 0 : Temporary
+const unsigned int MUTATION = 0;
 
 typedef std::vector<bool> genome_t;
 typedef int fitness_t;
+typedef std::vector<std::vector<double> > matrix_t;
 
 class Individual {
 public:
 	genome_t genome;
 	fitness_t fitness;
+	matrix_t table;
 	Individual() {}
 	Individual(unsigned int genomeSize) {
 		for (unsigned int i = 0; i < genomeSize; i++) {
@@ -29,7 +42,6 @@ typedef std::vector<Individual> population_t;
 
 class Population : public population_t {
 public:
-	//population_t population;
 	Population() {}
 	Population(unsigned int populationSize, unsigned int genomeSize) {
 		for (unsigned int i = 0; i < populationSize; i++) {
@@ -45,33 +57,11 @@ public:
 		}
 	}
 };
-/*
-typedef std::vector<std::vector<double> > matrix_t;
 
-class CrossoutData{
-public:
-matrix_t connect, cut;
-fitness_t fitness;
-}
+typedef Population(*funcPtr_t)(Population);
+typedef std::vector<funcPtr_t> funcPtrVec_t;
 
-class CrossoverTable {
-public:
-std::vector<CrossoutData>b data;
-matrix_t table;
-
-CrossoverTable(unsigned int size){
-table.resize(size-1);
-for (unsigned int i = 0; i < table.size(); i++) {
-for (unsigned int j = size; j > 0; j--) {
-table[i].push_back(1);
-}
-}
-}
-}
-*/
 namespace Evaluation {
-	enum FuncID_e { TEMP, LIFE_GAME };
-
 	Population temp(Population arg) {
 		fitness_t count;
 		for (unsigned int i = 0; i < arg.size(); i++) {
@@ -86,7 +76,7 @@ namespace Evaluation {
 	}
 
 	Population lifeGame(Population arg) {
-		unsigned int size = ceil(sqrt(arg[0].genome.size()));
+		int size = ceil(sqrt(arg[0].genome.size()));
 		unsigned int count;
 
 		for (int i = 0; i < (int)arg.size(); i++) {
@@ -95,8 +85,8 @@ namespace Evaluation {
 				count = 0;
 				for (int k = -1; k <= 1; k++) {
 					for (int l = -1; l <= 1; l++) {
-						if (0 <= j + k + l*size && j + k + l*size < arg[i].genome.size()) {
-							if (arg[i].genome[j] == true) count++;
+						if (0 <= j + k + l*size && j + k + l*size < (int)arg[i].genome.size()) {
+							if (arg[i].genome[j + k + l*size] == true) count++;
 						}
 					}
 				}
@@ -110,14 +100,15 @@ namespace Evaluation {
 				}
 			}
 		}
-
 		return arg;
 	}
+
+	const funcPtrVec_t call = { temp, lifeGame };
 }
 
-namespace Selection {
-	enum FuncID_e { TEMP };
+const funcPtr_t evaluation = Evaluation::call[EVALUATION];
 
+namespace Selection {
 	Population temp(Population arg) {
 		Population ans;
 		/*
@@ -144,10 +135,14 @@ namespace Selection {
 			return lhs.fitness > rhs.fitness;
 		});
 		ans = arg;
-		ans.resize(SELECTED_POPULATION_SIZE);
+		//ans.resize(SELECTED_POPULATION_SIZE);
 		return ans;
 	}
+
+	const funcPtrVec_t call = { temp };
 }
+
+const funcPtr_t selection = Selection::call[SELECTION];
 
 namespace Crossover {
 	enum FuncID_e { TEMP };
@@ -177,15 +172,20 @@ namespace Crossover {
 		//}
 		return arg;
 	}
+
+	Population useTable(Population arg) {
+		return arg;
+	}
+
+	const funcPtrVec_t call = { temp, useTable };
 }
 
-namespace Mutation {
-	enum FuncID_e { TEMP };
+const funcPtr_t crossover = Crossover::call[CROSSOVER];
 
+namespace Mutation {
 	Population temp(Population arg) {
 		for (unsigned int i = 0; i < arg.size(); i++) {
 			if (rand() % 10000 < MUTATION_RATE * 10000) {
-				std::cout << "mutation!!" << std::endl;
 				for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
 					if (rand() % 2 == 1) {
 						arg[i].genome[j] = !arg[i].genome[j];
@@ -195,7 +195,11 @@ namespace Mutation {
 		}
 		return arg;
 	}
+
+	const funcPtrVec_t call = { temp };
 }
+
+const funcPtr_t mutation = Mutation::call[MUTATION];
 
 /*
 Population loop(Population arg) {
@@ -254,93 +258,116 @@ std::cout << "populationSize = " << f.size() << std::endl;
 return f;
 }
 */
-
+/*
 typedef Population(*gaFuncPtr_t)(Population);
 typedef std::vector<gaFuncPtr_t> gaFuncPtrVec_t;
 
 class MyGA {
 private:
-	unsigned int genomeSize = GENOME_SIZE;
-	unsigned int populationSize = POPULATION_SIZE;
-	unsigned int generationNum = GENERATION_NUM;
-	double mutationRate = MUTATION_RATE;
+unsigned int genomeSize = GENOME_SIZE;
+unsigned int populationSize = POPULATION_SIZE;
+unsigned int generationNum = GENERATION_NUM;
+double mutationRate = MUTATION_RATE;
 
-	int evalutaionFuncID = Evaluation::LIFE_GAME;
-	int selectionFuncID = Selection::TEMP;
-	int crossoverFuncID = Crossover::TEMP;
-	int mutationFuncID = Mutation::TEMP;
+int evalutaionFuncID = Evaluation::LIFE_GAME;
+int selectionFuncID = Selection::TEMP;
+//int crossoverFuncID = Crossover::TEMP;
+//int mutationFuncID = Mutation::TEMP;
 
-	gaFuncPtrVec_t evaluationFuncPtrVec = { Evaluation::temp, Evaluation::lifeGame };
-	gaFuncPtrVec_t selectionFuncPtrVec = { Selection::temp };
-	gaFuncPtrVec_t crossoverFuncPtrVec = { Crossover::temp };
-	gaFuncPtrVec_t mutationFuncPtrVec = { Mutation::temp };
+gaFuncPtrVec_t evaluationFuncPtrVec = { Evaluation::temp, Evaluation::lifeGame };
+gaFuncPtrVec_t selectionFuncPtrVec = { Selection::temp };
+//gaFuncPtrVec_t crossoverFuncPtrVec = { Crossover::temp };
+//gaFuncPtrVec_t mutationFuncPtrVec = { Mutation::temp };
 
-	Population evaluation(Population arg) {
-		return evaluationFuncPtrVec[evalutaionFuncID](arg);
-	}
+Population evaluation(Population arg) {
+return evaluationFuncPtrVec[evalutaionFuncID](arg);
+}
 
-	Population selection(Population arg) {
-		return selectionFuncPtrVec[selectionFuncID](arg);
-	}
+Population selection(Population arg) {
+return selectionFuncPtrVec[selectionFuncID](arg);
+}
 
-	Population crossover(Population arg) {
-		return crossoverFuncPtrVec[crossoverFuncID](arg);
-	}
+Population crossover(Population arg) {
+return crossoverFuncPtrVec[crossoverFuncID](arg);
+}
 
-	Population mutation(Population arg) {
-		return mutationFuncPtrVec[mutationFuncID](arg);
-	}
+Population mutation(Population arg) {
+return mutationFuncPtrVec[mutationFuncID](arg);
+}
 public:
-	void done() {
-		Population population(populationSize, genomeSize), populationNext, temp;
+void done() {
+Population population(populationSize, genomeSize), populationNext, temp;
 
-		population = this->evaluation(population);
-		std::cout << std::endl;
-		std::cout << "generation " << 0 << " :" << std::endl;
-		population.show();
+population = this->evaluation(population);
+std::cout << std::endl;
+std::cout << "generation " << 0 << " :" << std::endl;
+population.show();
 
-		for (unsigned int k = 0; k < generationNum; k++) {
-			populationNext.resize(0);
-			while (populationNext.size() < populationSize) {
-				temp = this->selection(population);
-				temp = this->crossover(temp);
-				temp = this->mutation(temp);
+for (unsigned int k = 0; k < generationNum; k++) {
+populationNext.resize(0);
+while (populationNext.size() < populationSize) {
+temp = this->selection(population);
+temp = this->crossover(temp);
+temp = this->mutation(temp);
 
-				copy(temp.begin(), temp.end(), back_inserter(populationNext));
-			}
-			population = this->evaluation(population);
-			std::cout << std::endl;
-			std::cout << "generation " << k + 1 << " :" << std::endl;
-			population.show();
-		}
-	}
+copy(temp.begin(), temp.end(), back_inserter(populationNext));
+}
+population = this->evaluation(population);
+std::cout << std::endl;
+std::cout << "generation " << k + 1 << " :" << std::endl;
+population.show();
+}
+}
 
-	void setGenomeSize(unsigned int size) {
-		genomeSize = size;
-	}
+void setGenomeSize(unsigned int size) {
+genomeSize = size;
+}
 
-	void setPopulationSize(unsigned int size) {
-		populationSize = size;
-	}
+void setPopulationSize(unsigned int size) {
+populationSize = size;
+}
 
-	void setGenerationNum(unsigned int num) {
-		generationNum = num;
-	}
+void setGenerationNum(unsigned int num) {
+generationNum = num;
+}
 
-	void setMutationRate(double rate) {
-		mutationRate = rate;
-	}
+void setMutationRate(double rate) {
+mutationRate = rate;
+}
 };
+*/
 
 int main() {
-	//Population a(POPULATION_SIZE, GENOME_SIZE);
-	MyGA ga;
-	ga.done();
-	/*
-	for (unsigned int k = 0; k < GENERATION_NUM; k++) {
+	Population population(POPULATION_SIZE, GENOME_SIZE);
+
+	population = evaluation(population);
 	std::cout << std::endl;
-	std::cout << "generation " << k << " :" << std::endl;
-	a = loop(a);
+	std::cout << "generation " << 0 << " :" << std::endl;
+	population.show();
+
+	for (unsigned int k = 0; k < GENERATION_NUM; k++) {
+		Population nextPopulation;
+
+		nextPopulation = population;
+		std::sort(nextPopulation.begin(), nextPopulation.end(), [](const Individual &lhs, const Individual &rhs) {
+			return lhs.fitness > rhs.fitness;
+		});
+		nextPopulation.resize(ELITE_POPULATION_SIZE);
+		while (nextPopulation.size() < POPULATION_SIZE) {
+			Population temp;
+
+			temp = selection(population);
+			temp.resize(2);
+			temp = crossover(temp);
+			temp = mutation(temp);
+
+			copy(temp.begin(), temp.end(), back_inserter(nextPopulation));
+		}
+		nextPopulation.resize(POPULATION_SIZE);
+
+		population = evaluation(nextPopulation);
+		std::cout << std::endl;
+		std::cout << "generation " << k + 1 << " :" << std::endl;
+		population.show();
 	}
-	*/
 }
