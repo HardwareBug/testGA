@@ -197,7 +197,7 @@ int main() {
 			temp = crossover(temp);
 			//temp = mutation(temp);
 
-			copy(temp.begin(), temp.end(), back_inserter(nextPopulation));
+			std::copy(temp.begin(), temp.end(), back_inserter(nextPopulation));
 		}
 		nextPopulation.resize(POPULATION_SIZE);
 
