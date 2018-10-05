@@ -4,6 +4,7 @@
 #include <math.h>
 #include <time.h>
 
+
 const unsigned int GENOME_SIZE = 100;
 const unsigned int POPULATION_SIZE = 20;
 const unsigned int GENERATION_NUM = 5;
