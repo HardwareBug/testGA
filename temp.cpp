@@ -8,16 +8,16 @@ const unsigned int GENOME_SIZE = 100;
 const unsigned int POPULATION_SIZE = 20;
 const unsigned int GENERATION_NUM = 5;
 const unsigned int ELITE_POPULATION_SIZE = 4;
-const double MUTATION_RATE = 0.01;
+const double MUTATION_RATE = 0.00;
 
 // 0 : Uniform Crossover, 1 : Two-point Crossover 
 const unsigned int TABLE = 0;
 
 // 0 : Temporary, 1 : LifeGame (my function)
 const unsigned int EVALUATION = 1;
-// 0 : Temporary
-const unsigned int SELECTION = 0;
-// 0 : Temporary, 1 : Use crossout table
+// 0 : Temporary, 1 : ranking
+const unsigned int SELECTION = 1;
+// 0 : Temporary, 1 : Use crossover table
 const unsigned int CROSSOVER = 0;
 // 0 : Temporary
 const unsigned int MUTATION = 0;
@@ -118,10 +118,37 @@ namespace Selection {
 		});
 		ans = arg;
 
+		ans.resize(2);
 		return ans;
 	}
 
-	const funcPtrVec_t call = { temp };
+	Population ranking(Population arg) {
+		Population ans;
+		int sum, num;
+
+		std::sort(arg.begin(), arg.end(), [](const Individual &lhs, const Individual &rhs) {
+			return lhs.fitness < rhs.fitness;
+		});
+
+		sum = 0;
+		for (int i = 0; i < (int)arg.size(); i++) {
+			sum = sum + i + 1;
+		}
+		while (ans.size() < 2) {
+			num = (rand() % sum) + 1;
+			for (int i = 0; i < (int)arg.size(); i++) {
+				num = num - i - 1;
+				if (num <= 0) {
+					ans.push_back(arg[i]);
+					break;
+				}
+			}
+		}
+
+		return ans;
+	}
+
+	const funcPtrVec_t call = { temp, ranking };
 }
 
 const funcPtr_t selection = Selection::call[SELECTION];
@@ -193,9 +220,8 @@ int main() {
 			Population temp;
 
 			temp = selection(population);
-			temp.resize(2);
 			temp = crossover(temp);
-			//temp = mutation(temp);
+			temp = mutation(temp);
 
 			std::copy(temp.begin(), temp.end(), back_inserter(nextPopulation));
 		}
