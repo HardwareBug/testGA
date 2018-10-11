@@ -10,8 +10,10 @@ const unsigned int GENERATION_NUM = 5;
 const unsigned int ELITE_POPULATION_SIZE = 4;
 const double MUTATION_RATE = 0.00;
 
-// 0 : Uniform Crossover, 1 : Two-point Crossover 
-const unsigned int TABLE = 0;
+// 0 : Two-point Crossover, 1 : Uniform Crossover
+const unsigned int TABLE = 1;
+
+const double TABLE_INIT_COST = 1;
 
 // 0 : Temporary, 1 : LifeGame (my function)
 const unsigned int EVALUATION = 1;
@@ -22,19 +24,45 @@ const unsigned int CROSSOVER = 0;
 // 0 : Temporary
 const unsigned int MUTATION = 0;
 
+class Connection {
+public:
+	unsigned int node1, node2;
+	double cost;
+	Connection(unsigned int n1, unsigned int n2, double c) {
+		node1 = n1;
+		node2 = n2;
+		cost = c;
+		//std::cout << "(" << n1 << "," << n2 << "," << cost << ")" << std::endl;
+	}
+};
+
+typedef std::vector<Connection> connections_t;
 typedef std::vector<bool> genome_t;
 typedef int fitness_t;
-typedef std::vector<std::vector<double> > matrix_t;
 
 class Individual {
 public:
 	genome_t genome;
 	fitness_t fitness;
-	matrix_t table;
+	connections_t table, choice, cut;
 	Individual() {}
 	Individual(unsigned int genomeSize) {
 		for (unsigned int i = 0; i < genomeSize; i++) {
 			genome.insert(genome.begin(), rand() % 2);
+
+			for (unsigned int j = i + 1; j < genomeSize; j++) {
+				if (j == i + 1 || (i == 0 && j == genomeSize - 1)) {
+					table.push_back(Connection(i, j, TABLE_INIT_COST));
+				}
+				else {
+					if (TABLE == 0) {
+						table.push_back(Connection(i, j, 0));
+					}
+					else if (TABLE == 1) {
+						table.push_back(Connection(i, j, TABLE_INIT_COST));
+					}
+				}
+			}
 		}
 	}
 };
