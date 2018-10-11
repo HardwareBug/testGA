@@ -3,6 +3,12 @@
 #include <algorithm>
 #include <math.h>
 #include <time.h>
+#include <random>
+
+std::random_device RANDOM_DEVICE;
+std::mt19937 MT(RANDOM_DEVICE());
+std::uniform_real_distribution<double> RANDOM_RATE(0.0000, 1.0000);
+std::uniform_int_distribution<int> RANDOM_BOOL(0, 1);
 
 const unsigned int GENOME_SIZE = 100;
 const unsigned int POPULATION_SIZE = 20;
@@ -48,7 +54,7 @@ public:
 	Individual() {}
 	Individual(unsigned int genomeSize) {
 		for (unsigned int i = 0; i < genomeSize; i++) {
-			genome.insert(genome.begin(), rand() % 2);
+			genome.insert(genome.begin(), RANDOM_BOOL(MT));
 
 			for (unsigned int j = i + 1; j < genomeSize; j++) {
 				if (j == i + 1 || (i == 0 && j == genomeSize - 1)) {
@@ -162,8 +168,9 @@ namespace Selection {
 		for (int i = 0; i < (int)arg.size(); i++) {
 			sum = sum + i + 1;
 		}
+		std::uniform_int_distribution<int> random_temp(1, sum);
 		while (ans.size() < 2) {
-			num = (rand() % sum) + 1;
+			num = random_temp(MT);
 			for (int i = 0; i < (int)arg.size(); i++) {
 				num = num - i - 1;
 				if (num <= 0) {
@@ -187,7 +194,7 @@ namespace Crossover {
 	Population temp(Population arg) {
 
 		for (unsigned int i = 0; i < arg[i].genome.size(); i++) {
-			if (rand() % 2 == 1) {
+			if (RANDOM_BOOL(MT) == 1) {
 
 			}
 			else {
@@ -211,9 +218,9 @@ const funcPtr_t crossover = Crossover::call[CROSSOVER];
 namespace Mutation {
 	Population temp(Population arg) {
 		for (unsigned int i = 0; i < arg.size(); i++) {
-			if (rand() % 10000 < MUTATION_RATE * 10000) {
+			if (RANDOM_RATE(MT) < MUTATION_RATE) {
 				for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
-					if (rand() % 2 == 1) {
+					if (RANDOM_BOOL(MT) == 1) {
 						arg[i].genome[j] = !arg[i].genome[j];
 					}
 				}
@@ -228,7 +235,7 @@ namespace Mutation {
 const funcPtr_t mutation = Mutation::call[MUTATION];
 
 int main() {
-	srand((unsigned)time(NULL));
+	//srand((unsigned)time(NULL));
 	Population population(POPULATION_SIZE, GENOME_SIZE);
 
 	population = evaluation(population);
