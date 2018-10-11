@@ -207,6 +207,29 @@ namespace Crossover {
 	}
 
 	Population useTable(Population arg) {
+		double sum, randNum;
+
+		connections_t table;
+		std::copy(arg[0].table.begin(), arg[0].table.end(), back_inserter(table));
+
+		sum = 0;
+		for (int i = 0; i < (int)table.size(); i++) {
+			sum = table[i].cost;
+		}
+		if (sum != 0) {
+			std::uniform_real_distribution<double> random_temp(0, sum);
+			randNum = random_temp(MT);
+			for (int i = 0; i < (int)table.size(); i++) {
+				randNum -= table[i].cost;
+				//
+				// todo
+				//
+				//if(randNum < 0){
+				//	table.erase(table.begin() + i);
+				//}
+			}
+		}
+
 		return arg;
 	}
 
