@@ -1,3 +1,9 @@
+#define EIGEN_NO_DEBUG
+#define EIGEN_DONT_VECTORIZE
+#define EIGEN_DONT_PARALLELIZE
+#define EIGEN_MPL2_ONLY
+#include "Eigen/Dense"
+
 #include <vector>
 #include <iostream>
 #include <algorithm>
@@ -19,7 +25,6 @@ const double MUTATION_RATE = 0.01;
 
 // 0 : Two-point Crossover, 1 : Uniform Crossover
 const unsigned int TABLE = 1;
-
 const double TABLE_INIT_COST = 1;
 
 // 0 : Temporary, 1 : LifeGame (my function)
@@ -31,44 +36,37 @@ const unsigned int CROSSOVER = 1;
 // 0 : Temporary
 const unsigned int MUTATION = 0;
 
-class Connection {
-public:
-	unsigned int node1, node2;
-	double cost;
-	Connection() {};
-	Connection(unsigned int n1, unsigned int n2, double c) {
-		node1 = n1;
-		node2 = n2;
-		cost = c;
-		//std::cout << "(" << n1 << "," << n2 << "," << cost << ")" << std::endl;
-	}
-};
-
-typedef std::vector<Connection> connections_t;
 typedef std::vector<bool> genome_t;
 typedef int fitness_t;
 
 class Individual {
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	
 	genome_t genome;
 	std::optional<fitness_t> fitness;
 	std::optional<fitness_t> pre_fitness;
-	connections_t table, choice, cut;
+	Eigen::MatrixXd table;
+	
 	Individual() {}
 	Individual(unsigned int genomeSize) {
-		for (unsigned int i = 0; i < genomeSize; i++) {
+		table.resize(GENOME_SIZE, GENOME_SIZE);
+		for (int i = 0; i < genomeSize; i++) {
 			genome.insert(genome.begin(), RANDOM_BOOL(MT));
 
-			for (unsigned int j = i + 1; j < genomeSize; j++) {
-				if (j == i + 1 || (i == 0 && j == genomeSize - 1)) {
-					table.push_back(Connection(i, j, TABLE_INIT_COST));
-				}
-				else {
-					if (TABLE == 0) {
-						table.push_back(Connection(i, j, 0));
+			for (int j = 0; j < genomeSize; j++) {
+				if (TABLE == 0) {
+					if (std::abs(i - j) == 1 || std::abs(i - j) == GENOME_SIZE - 1) {
+						table(i, j) = TABLE_INIT_COST;
+					}else{
+						table(i, j) = 0;
 					}
-					else if (TABLE == 1) {
-						table.push_back(Connection(i, j, TABLE_INIT_COST));
+				}
+				else if (TABLE == 1) {
+					if (std::abs(i - j) != 0) {
+						table(i, j) = TABLE_INIT_COST;
+					}else{
+						table(i, j) = 0;
 					}
 				}
 			}
@@ -213,110 +211,65 @@ namespace Crossover {
 	}
 
 	Population useTable(Population arg) {
-		connections_t table, choice, cut;
-		std::copy(arg[0].table.begin(), arg[0].table.end(), back_inserter(table));
 		
-		std::vector<std::vector<unsigned int> > nodes;
-		for(unsigned int i = 0; i < arg[0].genome.size(); i++){
-			std::vector<unsigned int> temp;
-			temp.push_back(i);
-			nodes.push_back(temp);
+		Eigen::MatrixXd degree(GENOME_SIZE, GENOME_SIZE);
+		degree = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		for (int i = 0; i < GENOME_SIZE; i++) {
+			double temp = 0;
+			
+			for (int j = 0; j < GENOME_SIZE; j++) {
+				temp += arg[0].table(i, j);
+			}
+			
+			degree(i, i) = temp;
 		}
-
+		//std::cout << degree << std::endl << std::endl;
+		
 		//
-		//todo (change graph partitioning algorithm)
 		//
-
-		while(nodes.size() > 2){
-			double sum, randNum;
-			sum = 0;
-			for (int i = 0; i < (int)table.size(); i++) {
-				sum += table[i].cost;
-			}
-			if(sum != 0){
-				std::uniform_real_distribution<double> random_real_temp(0, sum);
-				randNum = random_real_temp(MT);
-				//std::cout << randNum << std::endl;
-				for (int i = 0; i < (int)table.size(); i++) {
-					randNum -= table[i].cost;
-					if(table[i].cost != 0){
-						if(randNum <= 0){
-
-							unsigned int node1_p, node2_p;
-							for(unsigned int j = 0; j < nodes.size(); j++){
-								for(unsigned int k = 0; k < nodes[j].size(); k++){
-									if( nodes[j][k] == table[i].node1){
-										node1_p = j;
-									}
-									if( nodes[j][k] == table[i].node2){
-										node2_p = j;
-									}
-								}
-							}
-							if(node1_p != node2_p){
-								if(node1_p > node2_p){
-									std::swap(node1_p, node2_p);
-								}
-								std::copy(nodes[node2_p].begin(), nodes[node2_p].end(), back_inserter(nodes[node1_p]));
-								nodes[node2_p].clear();
-								nodes.erase(nodes.begin() + node2_p);
-							}
-
-							choice.push_back(table[i]);
-							table.erase(table.begin() + i);
-							break;
-						}
-					}
-				}
-			}else{
-				std::uniform_int_distribution<int> random_int_temp(0, table.size()-1);
-				randNum = random_int_temp(MT);
-
-				unsigned int node1_p, node2_p;
-				for(unsigned int j = 0; j < nodes.size(); j++){
-					for(unsigned int k = 0; k < nodes[j].size(); k++){
-						if( nodes[j][k] == table[randNum].node1){
-							node1_p = j;
-						}
-						if( nodes[j][k] == table[randNum].node2){
-							node2_p = j;
-						}
-					}
-				}
-				if(node1_p != node2_p){
-					if(node1_p > node2_p){
-						std::swap(node1_p, node2_p);
-					}
-					std::copy(nodes[node2_p].begin(), nodes[node2_p].end(), back_inserter(nodes[node1_p]));
-					nodes[node2_p].clear();
-					nodes.erase(nodes.begin() + node2_p);
-				}
-
-				choice.push_back(table[randNum]);
-				table.erase(table.begin() + randNum);
-			}
-			/*
-			for (unsigned int i = 0; i < nodes.size(); i++) {
-				for (unsigned int j = 0; j < nodes[i].size(); j++) {
-					std::cout << nodes[i][j] << " ";
-				}
-				std::cout << std::endl;
-			}
-			std::cout << std::endl;
-			*/
-		}
+		//
 		
-		for (unsigned int i = 0; i < nodes[0].size(); i++) {
-			std::swap(arg[0].genome[nodes[0][i]], arg[1].genome[nodes[0][i]]);
-		}
+		Eigen::MatrixXd laplacian(GENOME_SIZE, GENOME_SIZE);
+		laplacian = degree - arg[0].table;
+		//std::cout << laplacian << std::endl << std::endl;
 		
-		for (unsigned int i = 0; i < nodes.size(); i++) {
-			for (unsigned int j = 0; j < nodes[i].size(); j++) {
-				std::cout << nodes[i][j] << " ";
+		//
+		//
+		//
+		
+		Eigen::MatrixXd degreeLeft(GENOME_SIZE, GENOME_SIZE);
+		degreeLeft = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		for (int i = 0; i < GENOME_SIZE; i++) {
+			degreeLeft(i, i) = 1 / std::sqrt(degree(i, i));
+		}
+		//std::cout << degreeLeft << std::endl << std::endl;
+		
+		Eigen::MatrixXd degreeRight(GENOME_SIZE, GENOME_SIZE);
+		degreeRight = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		for (int i = 0; i < GENOME_SIZE; i++) {
+			degreeRight(i, i) = std::sqrt(degree(i, i));
+		}
+		//std::cout << degreeRight << std::endl << std::endl;
+		
+		Eigen::MatrixXd target(GENOME_SIZE, GENOME_SIZE);
+		target = degreeLeft * laplacian * degreeRight;
+		//std::cout << target << std::endl << std::endl;
+		
+		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(target);
+		Eigen::MatrixXd value, vector;
+		value = eig.eigenvalues();
+		vector = eig.eigenvectors();
+		//std::cout << value << std::endl << std::endl;
+		//std::cout << vector << std::endl << std::endl;
+		
+		for (unsigned int i = 0; i < GENOME_SIZE; i++) {
+			if(vector(1, i) < 0){
+				std::swap(arg[0].genome[i], arg[1].genome[i]);
+				std::cout << i << " ";
 			}
-			std::cout << std::endl;
 		}
 		std::cout << std::endl;
+		
 		return arg;
 	}
 
