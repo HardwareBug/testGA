@@ -51,6 +51,37 @@ public:
 	Individual() {}
 	Individual(unsigned int genomeSize) {
 		table.resize(GENOME_SIZE, GENOME_SIZE);
+		/*
+		table(0, 0) = 0.0;
+		table(0, 1) = 0.8;
+		table(0, 2) = 0.1;
+		table(0, 3) = 0.1;
+		table(0, 4) = 0.1;
+		table(1, 0) = 0.8;
+		table(1, 1) = 0.0;
+		table(1, 2) = 0.4;
+		table(1, 3) = 0.2;
+		table(1, 4) = 0.2;
+		table(2, 0) = 0.1;
+		table(2, 1) = 0.4;
+		table(2, 2) = 0.0;
+		table(2, 3) = 0.9;
+		table(2, 4) = 0.7;
+		table(3, 0) = 0.1;
+		table(3, 1) = 0.2;
+		table(3, 2) = 0.9;
+		table(3, 3) = 0.0;
+		table(3, 4) = 0.8;
+		table(4, 0) = 0.1;
+		table(4, 1) = 0.2;
+		table(4, 2) = 0.7;
+		table(4, 3) = 0.8;
+		table(4, 4) = 0.0;
+		for (int i = 0; i < genomeSize; i++) {
+			genome.insert(genome.begin(), RANDOM_BOOL(MT));
+		}
+		*/
+		
 		for (int i = 0; i < genomeSize; i++) {
 			genome.insert(genome.begin(), RANDOM_BOOL(MT));
 
@@ -71,6 +102,7 @@ public:
 				}
 			}
 		}
+		
 	}
 };
 
@@ -247,7 +279,7 @@ namespace Crossover {
 		Eigen::MatrixXd degreeRight(GENOME_SIZE, GENOME_SIZE);
 		degreeRight = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
 		for (int i = 0; i < GENOME_SIZE; i++) {
-			degreeRight(i, i) = std::sqrt(degree(i, i));
+			degreeRight(i, i) = 1 / std::sqrt(degree(i, i));
 		}
 		//std::cout << degreeRight << std::endl << std::endl;
 		
@@ -263,7 +295,7 @@ namespace Crossover {
 		//std::cout << vector << std::endl << std::endl;
 		
 		for (unsigned int i = 0; i < GENOME_SIZE; i++) {
-			if(vector(1, i) < 0){
+			if(vector(i, 1) < 0){
 				std::swap(arg[0].genome[i], arg[1].genome[i]);
 				std::cout << i << " ";
 			}
