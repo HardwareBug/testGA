@@ -17,6 +17,8 @@ std::mt19937 MT(RANDOM_DEVICE());
 std::uniform_real_distribution<double> RANDOM_RATE(0.0000, 1.0000);
 std::uniform_int_distribution<int> RANDOM_BOOL(0, 1);
 
+std::uniform_real_distribution<double> RANDOM_TABLE(0.0, 0.1);
+
 const unsigned int GENOME_SIZE = 100;
 const unsigned int POPULATION_SIZE = 20;
 const unsigned int GENERATION_NUM = 5;
@@ -47,10 +49,14 @@ public:
 	std::optional<fitness_t> fitness;
 	std::optional<fitness_t> pre_fitness;
 	Eigen::MatrixXd table;
+	Eigen::MatrixXd connect;
+	bool has_data;
 	
 	Individual() {}
 	Individual(unsigned int genomeSize) {
 		table.resize(GENOME_SIZE, GENOME_SIZE);
+		connect.resize(GENOME_SIZE, GENOME_SIZE);
+		has_data = false;
 		/*
 		table(0, 0) = 0.0;
 		table(0, 1) = 0.8;
@@ -121,7 +127,11 @@ public:
 			for (unsigned int j = 0; j < it->genome.size(); j++) {
 				std::cout << it->genome[j];
 			}
-			std::cout << " " << it->fitness.value() << std::endl;
+			if(it->pre_fitness.has_value()){
+				std::cout << " " << it->fitness.value() << " " << it->pre_fitness.value() << std::endl;
+			}else{
+				std::cout << " " << it->fitness.value() << std::endl;
+			}
 		}
 	}
 };
@@ -133,7 +143,7 @@ namespace Evaluation {
 	Population temp(Population arg) {
 		fitness_t count;
 		for (unsigned int i = 0; i < arg.size(); i++) {
-			arg[i].pre_fitness = arg[i].fitness;
+			arg[i].pre_fitness.swap(arg[i].fitness);
 			count = 0;
 			for (unsigned int j = 0; j < arg[i].genome.size(); j++) {
 				if (arg[i].genome[j] == true) count++;
@@ -149,7 +159,8 @@ namespace Evaluation {
 		unsigned int count;
 
 		for (int i = 0; i < (int)arg.size(); i++) {
-			arg[i].pre_fitness = arg[i].fitness;
+			arg[i].pre_fitness.swap(arg[i].fitness);
+			
 			arg[i].fitness = 0;
 			for (int j = 0; j < (int)arg[i].genome.size(); j++) {
 				count = 0;
@@ -243,6 +254,15 @@ namespace Crossover {
 	}
 
 	Population useTable(Population arg) {
+		Eigen::MatrixXd adjacency(GENOME_SIZE, GENOME_SIZE);
+		adjacency = arg[0].table;
+		for (int i = 0; i < GENOME_SIZE; i++) {
+			for (int j = 0; j < GENOME_SIZE; j++) {
+				if(i != j){
+					adjacency(i, j) += RANDOM_TABLE(MT);
+				}
+			}
+		}
 		
 		Eigen::MatrixXd degree(GENOME_SIZE, GENOME_SIZE);
 		degree = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
@@ -250,7 +270,7 @@ namespace Crossover {
 			double temp = 0;
 			
 			for (int j = 0; j < GENOME_SIZE; j++) {
-				temp += arg[0].table(i, j);
+				temp += adjacency(i, j);
 			}
 			
 			degree(i, i) = temp;
@@ -262,7 +282,7 @@ namespace Crossover {
 		//
 		
 		Eigen::MatrixXd laplacian(GENOME_SIZE, GENOME_SIZE);
-		laplacian = degree - arg[0].table;
+		laplacian = degree - adjacency;
 		//std::cout << laplacian << std::endl << std::endl;
 		
 		//
@@ -297,10 +317,24 @@ namespace Crossover {
 		for (unsigned int i = 0; i < GENOME_SIZE; i++) {
 			if(vector(i, 1) < 0){
 				std::swap(arg[0].genome[i], arg[1].genome[i]);
-				std::cout << i << " ";
+				//std::cout << i << " ";
 			}
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
+		
+		for (unsigned int i = 0; i < GENOME_SIZE; i++) {
+			for (unsigned int j = 0; j < GENOME_SIZE; j++) {
+				if(i != j && (vector(i, 1) < 0) == (vector(i, 1) < 0)){
+					arg[0].connect(i, j) = 1;
+					arg[1].connect(i, j) = 1;
+				}else{
+					arg[0].connect(i, j) = 0;
+					arg[1].connect(i, j) = 0;
+				}
+			}
+		}
+		arg[0].has_data = true;
+		arg[1].has_data = true;
 		
 		return arg;
 	}
