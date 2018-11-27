@@ -21,9 +21,14 @@ std::uniform_real_distribution<double> RANDOM_TABLE(0.0, 0.1);
 
 const unsigned int GENOME_SIZE = 100;
 const unsigned int POPULATION_SIZE = 20;
-const unsigned int GENERATION_NUM = 5;
+const unsigned int GENERATION_NUM = 100;
 const unsigned int ELITE_POPULATION_SIZE = 2;
 const double MUTATION_RATE = 0.01;
+
+const unsigned int UPDATE_TABLE_DATASIZE_LINE = 100;
+const unsigned int UPPER_DATASIZE = 20;
+const unsigned int DOWNER_DATASIZE = 20;
+const unsigned int USE_UPDATE_TABLE = 1;
 
 // 0 : Two-point Crossover, 1 : Uniform Crossover
 const unsigned int TABLE = 1;
@@ -50,12 +55,14 @@ public:
 	std::optional<fitness_t> pre_fitness;
 	Eigen::MatrixXd table;
 	Eigen::MatrixXd connect;
+	Eigen::MatrixXd cut;
 	bool has_data;
 	
 	Individual() {}
 	Individual(unsigned int genomeSize) {
 		table.resize(GENOME_SIZE, GENOME_SIZE);
 		connect.resize(GENOME_SIZE, GENOME_SIZE);
+		cut.resize(GENOME_SIZE, GENOME_SIZE);
 		has_data = false;
 		/*
 		table(0, 0) = 0.0;
@@ -166,7 +173,7 @@ namespace Evaluation {
 				count = 0;
 				for (int k = -1; k <= 1; k++) {
 					for (int l = -1; l <= 1; l++) {
-						if (0 <= j + k + l*size && j + k + l*size < (int)arg[i].genome.size()) {
+						if (0 <= j + k + l*size && j + k + l*size < (int)arg[i].genome.size() && 0 <= j%size + k && j%size + k < size && 0 <= j/size + l && j/size + l < size) {
 							if (arg[i].genome[j + k + l*size] == true) count++;
 						}
 					}
@@ -263,6 +270,7 @@ namespace Crossover {
 				}
 			}
 		}
+		//std::cout << adjacency << std::endl << std::endl;
 		
 		Eigen::MatrixXd degree(GENOME_SIZE, GENOME_SIZE);
 		degree = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
@@ -324,7 +332,7 @@ namespace Crossover {
 		
 		for (unsigned int i = 0; i < GENOME_SIZE; i++) {
 			for (unsigned int j = 0; j < GENOME_SIZE; j++) {
-				if(i != j && (vector(i, 1) < 0) == (vector(i, 1) < 0)){
+				if(i != j && (vector(i, 1) < 0) && (vector(j, 1) < 0)){
 					arg[0].connect(i, j) = 1;
 					arg[1].connect(i, j) = 1;
 				}else{
@@ -333,6 +341,12 @@ namespace Crossover {
 				}
 			}
 		}
+		arg[0].cut = Eigen::MatrixXd::Ones(GENOME_SIZE, GENOME_SIZE) - Eigen::MatrixXd::Identity(GENOME_SIZE, GENOME_SIZE) - arg[0].connect ;
+		arg[1].cut = Eigen::MatrixXd::Ones(GENOME_SIZE, GENOME_SIZE) - Eigen::MatrixXd::Identity(GENOME_SIZE, GENOME_SIZE) - arg[1].connect ;
+		
+		//std::cout << arg[0].connect << std::endl << std::endl;
+		//td::cout << arg[0].cut << std::endl << std::endl;
+		
 		arg[0].has_data = true;
 		arg[1].has_data = true;
 		
@@ -361,11 +375,90 @@ namespace Mutation {
 	const funcPtrVec_t call = { temp };
 }
 
+class CrossoverTable {
+private:
+	Population data;
+	
+	Population update_table(Population arg){
+		std::sort(data.begin(), data.end(), [](const Individual &lhs, const Individual &rhs) {
+			return lhs.fitness > rhs.fitness;
+		});
+		
+		Eigen::MatrixXd upper_connect = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		Eigen::MatrixXd upper_cut = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		Eigen::MatrixXd downer_connect = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		Eigen::MatrixXd downer_cut = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		Eigen::MatrixXd connect = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		Eigen::MatrixXd cut = Eigen::MatrixXd::Zero(GENOME_SIZE, GENOME_SIZE);
+		Eigen::MatrixXd teble = arg[0].table;
+		
+		for(unsigned int i = 0; i < UPPER_DATASIZE; i++){
+			upper_connect = upper_connect + data[i].connect;
+			upper_cut = upper_cut + data[i].cut;
+		}
+		upper_connect = upper_connect.array() / UPPER_DATASIZE;
+		upper_cut = upper_cut.array() / UPPER_DATASIZE;
+		//std::cout << upper_connect << std::endl << std::endl;
+		//std::cout << upper_cut << std::endl << std::endl;
+		
+		for(unsigned int i = data.size() - DOWNER_DATASIZE; i < data.size(); i++){
+			downer_connect = downer_connect + data[i].connect;
+			downer_cut = downer_cut + data[i].cut;
+		}
+		downer_connect = downer_connect.array() / DOWNER_DATASIZE;
+		downer_cut = downer_cut.array() / DOWNER_DATASIZE;
+		//std::cout << downer_connect << std::endl << std::endl;
+		//std::cout << downer_cut << std::endl << std::endl;
+		
+		connect = upper_connect - downer_connect;
+		cut = upper_cut - downer_cut;
+		//std::cout << connect << std::endl << std::endl;
+		//std::cout << cut << std::endl << std::endl;
+		
+		connect = connect.array() + 1;
+		cut = cut.array() * (-1) + 1;
+		
+		teble = arg[0].table.array() * connect.array() * cut.array();
+		if(USE_UPDATE_TABLE){
+			for(unsigned int i = 0; i < arg.size(); i++){
+				arg[i].table = teble;
+			}
+		}
+		
+		data.erase(data.begin(), data.end());
+		
+		return arg;
+	}
+public:
+	Population update(Population arg){
+		Population temp = arg;
+		
+		for(unsigned int i = 0; i < arg.size(); i++){
+			if(temp[i].has_data){
+				temp[i].has_data = false;
+				temp[i].fitness = temp[i].fitness.value() - temp[i].pre_fitness.value();
+				temp[i].pre_fitness.reset();
+				data.push_back(temp[i]);
+			}
+		}
+		if(data.size() >= UPDATE_TABLE_DATASIZE_LINE){
+			arg = update_table(arg);
+		}
+		
+		return arg;
+	}
+	
+	void show(){
+		data.show();
+	}
+};
+
 const funcPtr_t mutation = Mutation::call[MUTATION];
 
 int main() {
 	//srand((unsigned)time(NULL));
 	Population population(POPULATION_SIZE, GENOME_SIZE);
+	CrossoverTable crossoverTable;
 
 	population = evaluation(population);
 	std::cout << std::endl;
@@ -393,12 +486,14 @@ int main() {
 
 		population = evaluation(nextPopulation);
 		
-		//
-		//todo (add UpdateCrossoverTable)
-		//
+		population = crossoverTable.update(population);
 		
 		std::cout << std::endl;
 		std::cout << "generation " << k + 1 << " :" << std::endl;
 		population.show();
 	}
+	
+	std::cout << std::endl;
+	std::cout << "crossoverTable :" << std::endl;
+	crossoverTable.show();
 }
